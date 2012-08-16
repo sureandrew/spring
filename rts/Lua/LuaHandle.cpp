@@ -183,11 +183,16 @@ bool CLuaHandle::LoadCode(lua_State *L, const string& code, const string& debug)
 
 	lua_settop(L, 0);
 
-#if defined(__SUPPORT_SNAN__) && !defined(USE_GML)
+#if defined(__SUPPORT_SNAN__)
 	// do not signal floating point exceptions in user Lua code
 	streflop::fpenv_t fenv;
+#if defined(USE_GML)
+	if (Threading::IsSimThread())
+#endif
+	{
 	streflop::fegetenv(&fenv);
 	streflop::feclearexcept(streflop::FPU_Exceptions(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW));
+	}
 #endif
 
 	int loadError = 0;
@@ -210,7 +215,10 @@ bool CLuaHandle::LoadCode(lua_State *L, const string& code, const string& debug)
 		ret = false;
 	}
 
-#if defined(__SUPPORT_SNAN__) && !defined(USE_GML)
+#if defined(__SUPPORT_SNAN__)
+#if defined(USE_GML)
+	if (Threading::IsSimThread())
+#endif
 	streflop::fesetenv(&fenv);
 #endif
 
@@ -416,11 +424,16 @@ int CLuaHandle::SetupTraceback(lua_State *L)
 
 int CLuaHandle::RunCallInTraceback(int inArgs, int outArgs, int errfuncIndex, std::string& traceback)
 {
-#if defined(__SUPPORT_SNAN__) && !defined(USE_GML)
+#if defined(__SUPPORT_SNAN__)
 	// do not signal floating point exceptions in user Lua code
 	streflop::fpenv_t fenv;
+#if defined(USE_GML)
+	if (Threading::IsSimThread())
+#endif
+	{
 	streflop::fegetenv(&fenv);
 	streflop::feclearexcept(streflop::FPU_Exceptions(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW));
+	}
 #endif
 
 	SELECT_LUA_STATE();
@@ -446,7 +459,10 @@ int CLuaHandle::RunCallInTraceback(int inArgs, int outArgs, int errfuncIndex, st
 		callinErrors += (error == 2);
 	}
 
-#if defined(__SUPPORT_SNAN__) && !defined(USE_GML)
+#if defined(__SUPPORT_SNAN__)
+#if defined(USE_GML)
+	if (Threading::IsSimThread())
+#endif
 	streflop::fesetenv(&fenv);
 #endif
 	return error;
